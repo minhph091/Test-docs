@@ -1,7 +1,7 @@
 # Sử dụng JUnit 5 để Kiểm thử Ứng dụng Java
 
 ## 1. Giới thiệu
-JUnit 5 là phiên bản mới nhất của framework kiểm thử đơn vị (unit testing) phổ biến cho Java. Với kiến trúc mô-đun, cú pháp hiện đại và nhiều tính năng mạnh mẽ, JUnit 5 giúp viết các bài kiểm thử dễ đọc, dễ bảo trì và hiệu quả. Tài liệu này hướng dẫn cách sử dụng JUnit 5 từ cơ bản đến nâng cao, bao gồm tất cả các annotation phổ biến và các kỹ thuật kiểm thử thực tế.
+JUnit 5 là phiên bản mới nhất của framework kiểm thử đơn vị (unit testing) trong Java.Nó giúp viết các bài kiểm thử dễ đọc, dễ bảo trì và hiệu quả. Tài liệu này hướng dẫn cách sử dụng JUnit 5 từ cơ bản đến nâng cao, bao gồm tất cả các annotation phổ biến và các kỹ thuật kiểm thử thực tế.
 
 ## 2. Thiết lập dự án
 ### 2.1. Yêu cầu
