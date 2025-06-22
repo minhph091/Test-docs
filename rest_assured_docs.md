@@ -101,7 +101,7 @@ Thêm Rest Assured vào file `pom.xml` (nếu dùng Maven):
 ```
 
 ### 3.3. Cấu hình cơ bản
-Nhập các package cần thiết trong class kiểm thử:
+Import các package cần thiết trong class test:
 
 ```java
 import io.restassured.RestAssured;
