@@ -1,6 +1,57 @@
-# HƯỚNG DẪN KẾT NỐI VÀ SỬ DỤNG WEBSOCKET CHAT (CLIENT)
+# HƯỚNG DẪN SỬ DỤNG WEBSOCKET CHO CHAT & THÔNG BÁO MATCH
 
-## 1. Cài đặt thư viện
+---
+
+## 1. WebSocket là gì?
+
+**WebSocket** là một giao thức mạng cho phép thiết lập kết nối hai chiều (full-duplex) giữa client và server trên một kết nối TCP duy nhất.  
+Khác với HTTP (request-response), WebSocket cho phép server chủ động gửi dữ liệu về client bất cứ lúc nào, rất phù hợp cho các ứng dụng realtime như chat, thông báo, game...
+
+**Ưu điểm:**
+- Giao tiếp realtime, độ trễ thấp.
+- Server chủ động push dữ liệu cho client.
+- Tiết kiệm tài nguyên hơn so với polling.
+
+---
+
+## 2. Cấu hình endpoint WebSocket trên backend
+
+**Spring Boot cấu hình endpoint WebSocket:**
+```java
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/api/ws") // endpoint cho client kết nối
+                .setAllowedOrigins("*")
+                .withSockJS();
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic", "/queue"); // các prefix cho subscribe
+        registry.setApplicationDestinationPrefixes("/app"); // prefix cho client gửi message
+    }
+}
+```
+- **Endpoint client kết nối:** `/api/ws`
+- **Prefix subscribe:** `/topic` (broadcast), `/queue` (riêng tư)
+- **Prefix gửi message:** `/app`
+
+---
+
+## 3. Các khái niệm cơ bản
+
+- **Endpoint:** Địa chỉ WebSocket server mà client sẽ kết nối (ví dụ: `ws://localhost:8080/api/ws`)
+- **Subscribe:** Đăng ký lắng nghe một kênh (topic) để nhận dữ liệu realtime từ server.
+- **Publish:** Gửi dữ liệu từ client lên server (thường qua các endpoint bắt đầu bằng `/app`).
+- **Topic:** Kênh chung, nhiều client có thể cùng subscribe (ví dụ: `/topic/chat/1`).
+- **Queue:** Kênh riêng tư, chỉ một client nhận (ít dùng cho chat 1-1).
+
+---
+
+## 4. Cài đặt thư viện cho client
 
 **Node.js:**
 ```bash
@@ -14,7 +65,7 @@ npm install @stomp/stompjs sockjs-client
 
 ---
 
-## 2. Kết nối WebSocket với STOMP
+## 5. Kết nối WebSocket từ client
 
 ### Node.js Example
 ```js
@@ -75,7 +126,7 @@ client.activate();
 
 ---
 
-## 3. Đăng ký nhận tin nhắn (subscribe)
+## 6. Đăng ký nhận tin nhắn (subscribe)
 
 Khi kết nối thành công, hãy subscribe vào topic phòng chat:
 ```js
@@ -87,7 +138,7 @@ client.subscribe('/topic/chat/{chatRoomId}', (message) => {
 
 ---
 
-## 4. Gửi tin nhắn (qua REST API)
+## 7. Gửi tin nhắn (qua REST API)
 
 ```js
 fetch('http://localhost:8080/api/chat/messages', {
@@ -107,7 +158,7 @@ fetch('http://localhost:8080/api/chat/messages', {
 
 ---
 
-## 5. Gửi trạng thái "đang nhập" (typing)
+## 8. Gửi trạng thái "đang nhập" (typing)
 
 ```js
 client.publish({
@@ -121,7 +172,7 @@ client.publish({
 
 ---
 
-## 6. Đánh dấu tin nhắn đã đọc
+## 9. Đánh dấu tin nhắn đã đọc
 
 ```js
 fetch('http://localhost:8080/api/chat/rooms/1/messages/read', {
@@ -135,7 +186,7 @@ fetch('http://localhost:8080/api/chat/rooms/1/messages/read', {
 
 ---
 
-## 7. Xử lý các loại message từ WebSocket
+## 10. Xử lý các loại message từ WebSocket
 
 ```js
 client.subscribe('/topic/chat/1', (message) => {
@@ -158,11 +209,63 @@ client.subscribe('/topic/chat/1', (message) => {
 
 ---
 
-## 8. Lưu ý bảo mật
+## 11. Đăng ký nhận thông báo matching thành công (Match Notification)
 
-- Luôn truyền JWT token khi kết nối và gọi API.
-- Chỉ user thuộc phòng chat mới nhận được tin nhắn/phản hồi.
+### Đăng ký (subscribe) topic thông báo match
+
+Khi user đăng nhập hoặc vào app, hãy subscribe vào topic thông báo cá nhân của user (ví dụ: `/topic/notification/{userId}`):
+
+```js
+// Giả sử userId là 123
+client.subscribe('/topic/notification/123', (message) => {
+  const data = JSON.parse(message.body);
+  if (data.type === 'MATCH') {
+    // Xử lý thông báo match thành công
+    alert(`Bạn đã match với ${data.matchedUsername}!`);
+    // Có thể tự động mở phòng chat hoặc cập nhật UI
+  }
+  // Có thể xử lý các loại notification khác ở đây
+});
+```
+
+#### Cấu trúc message thông báo match (ví dụ)
+
+```json
+{
+  "type": "MATCH",
+  "matchId": 5,
+  "chatRoomId": 10,
+  "matchedUserId": 456,
+  "matchedUsername": "jane_smith",
+  "matchMessage": "You and jane_smith have matched! Start chatting now!"
+}
+```
+
+#### Luồng hoạt động
+
+- Khi user A và user B cùng like nhau (match thành công), backend sẽ gửi thông báo qua WebSocket tới cả hai user.
+- Client lắng nghe topic `/topic/notification/{userId}` sẽ nhận được thông báo này ngay lập tức.
+
+#### Gợi ý xử lý UI
+
+- Hiển thị popup thông báo match thành công.
+- Tự động chuyển sang giao diện chat với user vừa match (dùng `chatRoomId` trong message).
+- Cập nhật danh sách match hoặc chat room.
 
 ---
 
-**Nếu cần ví dụ cụ thể cho mobile hoặc framework khác, hãy hỏi lại để được hướng dẫn chi tiết hơn!**
+## 12. Lưu ý bảo mật
+
+- Luôn truyền JWT token khi kết nối và gọi API.
+- Chỉ user thuộc phòng chat hoặc đúng userId mới nhận được tin nhắn/thông báo.
+
+---
+
+## 13. Tham khảo thêm
+
+- [@stomp/stompjs documentation](https://stomp-js.github.io/stomp-websocket/codo/extra/docs-src/Usage.md.html)
+- [SockJS documentation](https://github.com/sockjs/sockjs-client)
+
+---
+
+**Nếu cần ví dụ cụ thể cho mobile hoặc framework khác, hãy hỏi lại để được hướng dẫn chi tiết hơn!** 
