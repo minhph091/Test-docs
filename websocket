@@ -1,1 +1,168 @@
+# HƯỚNG DẪN KẾT NỐI VÀ SỬ DỤNG WEBSOCKET CHAT (CLIENT)
 
+## 1. Cài đặt thư viện
+
+**Node.js:**
+```bash
+npm install @stomp/stompjs ws
+```
+
+**React/Web:**
+```bash
+npm install @stomp/stompjs sockjs-client
+```
+
+---
+
+## 2. Kết nối WebSocket với STOMP
+
+### Node.js Example
+```js
+const { Client } = require('@stomp/stompjs');
+const WebSocket = require('ws');
+
+const WS_URL = 'ws://localhost:8080/api/ws';
+const jwtToken = 'YOUR_JWT_TOKEN';
+
+const client = new Client({
+  brokerURL: WS_URL,
+  connectHeaders: {
+    Authorization: `Bearer ${jwtToken}`,
+  },
+  webSocketFactory: () => new WebSocket(WS_URL),
+  reconnectDelay: 5000,
+  debug: (str) => console.log(str),
+});
+
+client.onConnect = () => {
+  console.log('✅ WebSocket connected');
+  // Đăng ký nhận tin nhắn phòng chat
+  client.subscribe('/topic/chat/1', (message) => {
+    const data = JSON.parse(message.body);
+    console.log('Received:', data);
+  });
+};
+
+client.activate();
+```
+
+### React Example (dùng SockJS)
+```js
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+
+const WS_URL = 'http://localhost:8080/api/ws';
+const jwtToken = localStorage.getItem('token');
+
+const client = new Client({
+  webSocketFactory: () => new SockJS(WS_URL),
+  connectHeaders: {
+    Authorization: `Bearer ${jwtToken}`,
+  },
+  reconnectDelay: 5000,
+  debug: (str) => console.log(str),
+});
+
+client.onConnect = () => {
+  client.subscribe('/topic/chat/1', (message) => {
+    const data = JSON.parse(message.body);
+    // Xử lý data
+  });
+};
+
+client.activate();
+```
+
+---
+
+## 3. Đăng ký nhận tin nhắn (subscribe)
+
+Khi kết nối thành công, hãy subscribe vào topic phòng chat:
+```js
+client.subscribe('/topic/chat/{chatRoomId}', (message) => {
+  const data = JSON.parse(message.body);
+  // Xử lý các loại message: MESSAGE, TYPING, READ_RECEIPT
+});
+```
+
+---
+
+## 4. Gửi tin nhắn (qua REST API)
+
+```js
+fetch('http://localhost:8080/api/chat/messages', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${jwtToken}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    chatRoomId: 1,
+    content: 'Hello!',
+    messageType: 'TEXT',
+  }),
+});
+```
+> Tin nhắn sẽ được gửi tới tất cả client qua WebSocket sau khi backend xử lý.
+
+---
+
+## 5. Gửi trạng thái "đang nhập" (typing)
+
+```js
+client.publish({
+  destination: '/app/chat.typing',
+  body: JSON.stringify({
+    chatRoomId: 1,
+    typing: true, // hoặc false khi dừng nhập
+  }),
+});
+```
+
+---
+
+## 6. Đánh dấu tin nhắn đã đọc
+
+```js
+fetch('http://localhost:8080/api/chat/rooms/1/messages/read', {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${jwtToken}`,
+  },
+});
+```
+> Sau khi gọi API này, backend sẽ gửi WebSocket message type `"READ_RECEIPT"` cho các client khác.
+
+---
+
+## 7. Xử lý các loại message từ WebSocket
+
+```js
+client.subscribe('/topic/chat/1', (message) => {
+  const data = JSON.parse(message.body);
+  switch (data.type) {
+    case 'MESSAGE':
+      // Hiển thị tin nhắn mới
+      break;
+    case 'TYPING':
+      // Hiển thị "đang nhập..." cho user khác
+      break;
+    case 'READ_RECEIPT':
+      // Đánh dấu tin nhắn đã được đọc
+      break;
+    default:
+      // Xử lý các loại khác nếu có
+  }
+});
+```
+
+---
+
+## 8. Lưu ý bảo mật
+
+- Luôn truyền JWT token khi kết nối và gọi API.
+- Chỉ user thuộc phòng chat mới nhận được tin nhắn/phản hồi.
+
+---
+
+**Nếu cần ví dụ cụ thể cho mobile hoặc framework khác, hãy hỏi lại để được hướng dẫn chi tiết hơn!**
