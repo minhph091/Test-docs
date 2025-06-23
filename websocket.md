@@ -267,5 +267,3 @@ client.subscribe('/topic/notification/123', (message) => {
 - [SockJS documentation](https://github.com/sockjs/sockjs-client)
 
 ---
-
-**Nếu cần ví dụ cụ thể cho mobile hoặc framework khác, hãy hỏi lại để được hướng dẫn chi tiết hơn!** 
