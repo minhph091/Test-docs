@@ -54,6 +54,11 @@ public static void setup() {
     RestAssured.port = 443; // Cổng mặc định cho HTTPS
     RestAssured.basePath = "/v1";
 }
+// Cách viết ngắn gọn hơn
+@BeforeAll
+public static void setup() {
+    RestAssured.baseURI = "https://api.example.com:443/v1";
+}
 ```
 
 #### 3.1.2. Sử dụng cấu hình toàn cục trong test case
