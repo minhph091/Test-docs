@@ -985,6 +985,3 @@ given()
     .statusCode(200);
 ```
 
-## 12. Kết luận
-
-Rest Assured là một công cụ mạnh mẽ, dễ sử dụng để kiểm thử API RESTful. Với cú pháp đơn giản, hỗ trợ Text Blocks để tạo JSON body, các tính năng xác thực như JWT, và khả năng xử lý response linh hoạt, nó giúp tự động hóa kiểm thử một cách hiệu quả. Hãy áp dụng các ví dụ trên và tùy chỉnh theo nhu cầu dự án của bạn.7
