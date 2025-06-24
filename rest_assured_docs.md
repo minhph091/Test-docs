@@ -37,11 +37,11 @@ import static io.restassured.RestAssured.given;
 
 ## 3. Các thiết lập quan trọng
 
-Để đảm bảo kiểm thử API hiệu quả, Rest Assured cung cấp các thiết lập cơ bản như baseURI, port, basePath, header chung, query parameters, và path parameters. Các thiết lập này giúp giảm lặp code và đảm bảo tính nhất quán trong các test case.
+Để đảm bảo quá trình kiểm thử API hiệu quả, Rest Assured cung cấp các thiết lập cơ bản như baseURI, header chung. Các thiết lập này giúp giảm lặp code, tái sử dụng code tốt hơn. 
 
 ### 3.1. Thiết lập BaseURI, Port, và BasePath
 
-Cấu hình `baseUri`, `port`, và `basePath` để xác định URL cơ sở cho tất cả các request.
+Cấu hình `baseUri`, `port`, và `basePath` để xác định URL cơ sở cho tất cả các request. 'basePath' là phần cố định ở đầu của đường dẫn (path) trong URL mà mọi request sẽ sử dụng mặc định. 
 
 #### 3.1.1. Thiết lập toàn cục
 
