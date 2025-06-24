@@ -56,21 +56,45 @@ public static void setup() {
 }
 ```
 
-#### 3.1.2. Sử dụng trong test case
+#### 3.1.2. Sử dụng cấu hình toàn cục trong test case
+
+Khi cấu hình toàn cục đã được thiết lập, các test case sẽ tự động sử dụng nó mà không cần khai báo lại. Request URL cuối cùng sẽ là `https://api.example.com:443/v1/users/1`.
 
 ```java
 @Test
 public void testGetUserWithBaseConfig() {
     given()
-        .when()
-        .get("/users/1")
-        .then()
+        // Không cần chỉ định baseURI ở đây
+    .when()
+        .get("/users/1") // Chỉ cần cung cấp endpoint tương đối
+    .then()
         .statusCode(200)
         .body("name", equalTo("John Doe"));
 }
 ```
 
-#### 3.1.3. Lưu ý
+#### 3.1.3. Ghi đè cấu hình trong một test case cụ thể
+
+Trong trường hợp một test case cần gọi đến một API endpoint khác với cấu hình toàn cục (ví dụ: một dịch vụ khác hoặc một phiên bản API cũ hơn), có thể ghi đè baseURI bằng phương thức `.baseUri()` trong request.
+Thiết lập này chỉ có hiệu lực cho request đó và không ảnh hưởng đến các test case khác.
+
+```java
+@Test
+public void testEndpointFromAnotherService() {
+    given()
+        // Ghi đè baseURI toàn cục cho request này
+        .baseUri("https://api.another-service.com")
+        // Port và basePath cũng có thể được ghi đè nếu cần
+        .port(8080)
+        .basePath("/api/v2")
+    .when()
+        .get("/health-check")
+    .then()
+        .statusCode(200);
+}
+```
+
+#### 3.1.4. Lưu ý
 
 - `baseURI`: Địa chỉ cơ sở của API (ví dụ: `https://api.example.com`).
 - `port`: Cổng của server (mặc định: 80 cho HTTP, 443 cho HTTPS).
