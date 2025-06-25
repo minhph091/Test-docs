@@ -35,7 +35,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 }
 ```
-- **Endpoint client kết nối:** `/api/ws`
+- **Endpoint client kết nối:** `/ws`
 - **Prefix subscribe:** `/topic` (broadcast), `/queue` (riêng tư)
 - **Prefix gửi message:** `/app`
 
