@@ -1,3 +1,4 @@
+```markdown
 # HƯỚNG DẪN SỬ DỤNG WEBSOCKET CHO CHAT & THÔNG BÁO MATCH
 
 ---
@@ -186,7 +187,69 @@ fetch('http://localhost:8080/api/chat/rooms/1/messages/read', {
 
 ---
 
-## 10. Xử lý các loại message từ WebSocket
+## 10. Thu hồi tin nhắn (Message Recall)
+
+### Gửi yêu cầu thu hồi tin nhắn qua WebSocket
+
+```js
+client.publish({
+  destination: '/app/chat.recallMessage',
+  body: JSON.stringify({
+    messageId: 123, // ID của tin nhắn cần thu hồi
+  }),
+});
+```
+
+### Gửi yêu cầu thu hồi qua REST API (fallback)
+
+```js
+fetch('http://localhost:8080/api/chat/messages/123/recall', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${jwtToken}`,
+  },
+});
+```
+
+### Xử lý thông báo tin nhắn bị thu hồi
+
+```js
+client.subscribe('/topic/chat/1', (message) => {
+  const data = JSON.parse(message.body);
+  switch (data.type) {
+    case 'MESSAGE_RECALLED':
+      // Cập nhật UI để hiển thị tin nhắn đã bị thu hồi
+      updateMessageAsRecalled(data.messageId);
+      break;
+    // ... các case khác
+  }
+});
+```
+
+### Cấu trúc message thông báo thu hồi
+
+```json
+{
+  "type": "MESSAGE_RECALLED",
+  "chatRoomId": 1,
+  "messageId": 123,
+  "senderId": 456,
+  "timestamp": "2024-01-01T12:00:00",
+  "recalled": true,
+  "recalledAt": "2024-01-01T12:00:00"
+}
+```
+
+### Lưu ý về thu hồi tin nhắn
+
+- **Thời gian thu hồi:** Chỉ có thể thu hồi tin nhắn trong vòng 30 phút sau khi gửi
+- **Quyền thu hồi:** Chỉ người gửi tin nhắn mới có thể thu hồi tin nhắn của mình
+- **Real-time:** Tất cả client trong phòng chat sẽ nhận được thông báo thu hồi ngay lập tức
+- **Fallback:** Nên sử dụng REST API để xử lý lỗi tốt hơn
+
+---
+
+## 11. Xử lý các loại message từ WebSocket
 
 ```js
 client.subscribe('/topic/chat/1', (message) => {
@@ -201,6 +264,10 @@ client.subscribe('/topic/chat/1', (message) => {
     case 'READ_RECEIPT':
       // Đánh dấu tin nhắn đã được đọc
       break;
+    case 'MESSAGE_RECALLED':
+      // Cập nhật UI để hiển thị tin nhắn đã bị thu hồi
+      updateMessageAsRecalled(data.messageId);
+      break;
     default:
       // Xử lý các loại khác nếu có
   }
@@ -209,7 +276,7 @@ client.subscribe('/topic/chat/1', (message) => {
 
 ---
 
-## 11. Đăng ký nhận thông báo matching thành công (Match Notification)
+## 12. Đăng ký nhận thông báo matching thành công (Match Notification)
 
 ### Đăng ký (subscribe) topic thông báo match
 
@@ -254,16 +321,17 @@ client.subscribe('/topic/notification/123', (message) => {
 
 ---
 
-## 12. Lưu ý bảo mật
+## 13. Lưu ý bảo mật
 
 - Luôn truyền JWT token khi kết nối và gọi API.
 - Chỉ user thuộc phòng chat hoặc đúng userId mới nhận được tin nhắn/thông báo.
 
 ---
 
-## 13. Tham khảo thêm
+## 14. Tham khảo thêm
 
 - [@stomp/stompjs documentation](https://stomp-js.github.io/stomp-websocket/codo/extra/docs-src/Usage.md.html)
 - [SockJS documentation](https://github.com/sockjs/sockjs-client)
 
 ---
+```
