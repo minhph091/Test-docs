@@ -132,7 +132,7 @@ Khi kết nối thành công, hãy subscribe vào topic phòng chat:
 ```js
 client.subscribe('/topic/chat/{chatRoomId}', (message) => {
   const data = JSON.parse(message.body);
-  // Xử lý các loại message: MESSAGE, TYPING, READ_RECEIPT
+  // Xử lý các loại message: MESSAGE, TYPING, READ_RECEIPT,MESSAGE_RECALLED
 });
 ```
 
