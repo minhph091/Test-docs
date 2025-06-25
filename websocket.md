@@ -23,20 +23,21 @@ Khác với HTTP (request-response), WebSocket cho phép server chủ động g�
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/api/ws") // endpoint cho client kết nối
+        registry.addEndpoint("/ws") // endpoint cho client kết nối
                 .setAllowedOrigins("*")
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue"); // các prefix cho subscribe
+        registry.enableSimpleBroker("/topic", "/queue", "/chat", "/notification"); // các prefix cho subscribe
         registry.setApplicationDestinationPrefixes("/app"); // prefix cho client gửi message
+        registry.setUserDestinationPrefix("/user"); // prefix cho user-specific messages
     }
 }
 ```
-- **Endpoint client kết nối:** `/ws`
-- **Prefix subscribe:** `/topic` (broadcast), `/queue` (riêng tư)
+- **Endpoint client kết nối:** `/ws` (sẽ thành `/api/ws` với context-path)
+- **Prefix subscribe:** `/topic` (broadcast), `/queue` (riêng tư), `/user/queue` (user-specific)
 - **Prefix gửi message:** `/app`
 
 ---
@@ -47,7 +48,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 - **Subscribe:** Đăng ký lắng nghe một kênh (topic) để nhận dữ liệu realtime từ server.
 - **Publish:** Gửi dữ liệu từ client lên server (thường qua các endpoint bắt đầu bằng `/app`).
 - **Topic:** Kênh chung, nhiều client có thể cùng subscribe (ví dụ: `/topic/chat/1`).
-- **Queue:** Kênh riêng tư, chỉ một client nhận (ít dùng cho chat 1-1).
+- **Queue:** Kênh riêng tư, chỉ một client nhận (ví dụ: `/user/queue/notification`).
 
 ---
 
@@ -86,7 +87,7 @@ const client = new Client({
 });
 
 client.onConnect = () => {
-  console.log('✅ WebSocket connected!');
+  console.log('✅ WebSocket connected');
   // Đăng ký nhận tin nhắn phòng chat
   client.subscribe('/topic/chat/1', (message) => {
     const data = JSON.parse(message.body);
@@ -132,7 +133,7 @@ Khi kết nối thành công, hãy subscribe vào topic phòng chat:
 ```js
 client.subscribe('/topic/chat/{chatRoomId}', (message) => {
   const data = JSON.parse(message.body);
-  // Xử lý các loại message: MESSAGE, TYPING, READ_RECEIPT,MESSAGE_RECALLED
+  // Xử lý các loại message: MESSAGE, TYPING, READ_RECEIPT, MESSAGE_RECALLED
 });
 ```
 
@@ -279,43 +280,45 @@ client.subscribe('/topic/chat/1', (message) => {
 
 ### Đăng ký (subscribe) topic thông báo match
 
-Khi user đăng nhập hoặc vào app, hãy subscribe vào topic thông báo cá nhân của user (ví dụ: `/topic/notification/{userId}`):
+Khi user đăng nhập hoặc vào app, hãy subscribe vào topic thông báo cá nhân của user:
 
 ```js
-// Giả sử userId là 123
-client.subscribe('/topic/notification/123', (message) => {
+// Subscribe vào user-specific notification queue
+client.subscribe('/user/queue/notification', (message) => {
   const data = JSON.parse(message.body);
   if (data.type === 'MATCH') {
     // Xử lý thông báo match thành công
-    alert(`Bạn đã match với ${data.matchedUsername}!`);
+    alert(`Bạn đã match với ${data.content}!`);
     // Có thể tự động mở phòng chat hoặc cập nhật UI
   }
   // Có thể xử lý các loại notification khác ở đây
 });
 ```
 
-#### Cấu trúc message thông báo match (ví dụ)
+#### Cấu trúc message thông báo match (thực tế)
 
 ```json
 {
+  "id": "123",
   "type": "MATCH",
-  "matchId": 5,
-  "chatRoomId": 10,
-  "matchedUserId": 456,
-  "matchedUsername": "jane_smith",
-  "matchMessage": "You and jane_smith have matched! Start chatting now!"
+  "title": "New Match!",
+  "content": "You and jane_smith have matched! Start chatting now!",
+  "relatedEntityId": 5,
+  "relatedEntityType": "MATCH",
+  "timestamp": "2024-01-01T12:00:00",
+  "action": "CREATE"
 }
 ```
 
 #### Luồng hoạt động
 
 - Khi user A và user B cùng like nhau (match thành công), backend sẽ gửi thông báo qua WebSocket tới cả hai user.
-- Client lắng nghe topic `/topic/notification/{userId}` sẽ nhận được thông báo này ngay lập tức.
+- Client lắng nghe topic `/user/queue/notification` sẽ nhận được thông báo này ngay lập tức.
 
 #### Gợi ý xử lý UI
 
 - Hiển thị popup thông báo match thành công.
-- Tự động chuyển sang giao diện chat với user vừa match (dùng `chatRoomId` trong message).
+- Tự động chuyển sang giao diện chat với user vừa match (dùng `relatedEntityId` để lấy matchId).
 - Cập nhật danh sách match hoặc chat room.
 
 ---
@@ -324,6 +327,7 @@ client.subscribe('/topic/notification/123', (message) => {
 
 - Luôn truyền JWT token khi kết nối và gọi API.
 - Chỉ user thuộc phòng chat hoặc đúng userId mới nhận được tin nhắn/thông báo.
+- WebSocket authentication được xử lý qua `WebSocketAuthInterceptor`.
 
 ---
 
