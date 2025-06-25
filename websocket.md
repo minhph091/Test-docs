@@ -221,3 +221,115 @@ client.subscribe('/topic/chat/1', (message) => {
       updateMessageAsRecalled(data.messageId);
       break;
     // ... các case khác
+  }
+});
+```
+
+### Cấu trúc message thông báo thu hồi
+
+```json
+{
+  "type": "MESSAGE_RECALLED",
+  "chatRoomId": 1,
+  "messageId": 123,
+  "senderId": 456,
+  "timestamp": "2024-01-01T12:00:00",
+  "recalled": true,
+  "recalledAt": "2024-01-01T12:00:00"
+}
+```
+
+### Lưu ý về thu hồi tin nhắn
+
+- **Thời gian thu hồi:** Chỉ có thể thu hồi tin nhắn trong vòng 30 phút sau khi gửi
+- **Quyền thu hồi:** Chỉ người gửi tin nhắn mới có thể thu hồi tin nhắn của mình
+- **Real-time:** Tất cả client trong phòng chat sẽ nhận được thông báo thu hồi ngay lập tức
+- **Fallback:** Nên sử dụng REST API để xử lý lỗi tốt hơn
+
+---
+
+## 11. Xử lý các loại message từ WebSocket
+
+```js
+client.subscribe('/topic/chat/1', (message) => {
+  const data = JSON.parse(message.body);
+  switch (data.type) {
+    case 'MESSAGE':
+      // Hiển thị tin nhắn mới
+      break;
+    case 'TYPING':
+      // Hiển thị "đang nhập..." cho user khác
+      break;
+    case 'READ_RECEIPT':
+      // Đánh dấu tin nhắn đã được đọc
+      break;
+    case 'MESSAGE_RECALLED':
+      // Cập nhật UI để hiển thị tin nhắn đã bị thu hồi
+      updateMessageAsRecalled(data.messageId);
+      break;
+    default:
+      // Xử lý các loại khác nếu có
+  }
+});
+```
+
+---
+
+## 12. Đăng ký nhận thông báo matching thành công (Match Notification)
+
+### Đăng ký (subscribe) topic thông báo match
+
+Khi user đăng nhập hoặc vào app, hãy subscribe vào topic thông báo cá nhân của user (ví dụ: `/topic/notification/{userId}`):
+
+```js
+// Giả sử userId là 123
+client.subscribe('/topic/notification/123', (message) => {
+  const data = JSON.parse(message.body);
+  if (data.type === 'MATCH') {
+    // Xử lý thông báo match thành công
+    alert(`Bạn đã match với ${data.matchedUsername}!`);
+    // Có thể tự động mở phòng chat hoặc cập nhật UI
+  }
+  // Có thể xử lý các loại notification khác ở đây
+});
+```
+
+#### Cấu trúc message thông báo match (ví dụ)
+
+```json
+{
+  "type": "MATCH",
+  "matchId": 5,
+  "chatRoomId": 10,
+  "matchedUserId": 456,
+  "matchedUsername": "jane_smith",
+  "matchMessage": "You and jane_smith have matched! Start chatting now!"
+}
+```
+
+#### Luồng hoạt động
+
+- Khi user A và user B cùng like nhau (match thành công), backend sẽ gửi thông báo qua WebSocket tới cả hai user.
+- Client lắng nghe topic `/topic/notification/{userId}` sẽ nhận được thông báo này ngay lập tức.
+
+#### Gợi ý xử lý UI
+
+- Hiển thị popup thông báo match thành công.
+- Tự động chuyển sang giao diện chat với user vừa match (dùng `chatRoomId` trong message).
+- Cập nhật danh sách match hoặc chat room.
+
+---
+
+## 13. Lưu ý bảo mật
+
+- Luôn truyền JWT token khi kết nối và gọi API.
+- Chỉ user thuộc phòng chat hoặc đúng userId mới nhận được tin nhắn/thông báo.
+
+---
+
+## 14. Tham khảo thêm
+
+- [@stomp/stompjs documentation](https://stomp-js.github.io/stomp-websocket/codo/extra/docs-src/Usage.md.html)
+- [SockJS documentation](https://github.com/sockjs/sockjs-client)
+
+---
