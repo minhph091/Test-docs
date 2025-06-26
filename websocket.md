@@ -161,13 +161,43 @@ fetch('http://localhost:8080/api/chat/messages', {
 
 ## 8. Gửi trạng thái "đang nhập" (typing)
 
+Client gửi typing indicator:
 ```js
-client.publish({
-  destination: '/app/chat.typing',
-  body: JSON.stringify({
-    chatRoomId: 1,
-    typing: true, // hoặc false khi dừng nhập
-  }),
+// Khi user bắt đầu gõ
+stompClient.send("/app/chat.typing", {}, JSON.stringify({
+    chatRoomId: 123,
+    typing: true
+}));
+
+// Khi user ngừng gõ
+stompClient.send("/app/chat.typing", {}, JSON.stringify({
+    chatRoomId: 123,
+    typing: false
+}));
+```
+
+Server broadcast đến tất cả thành viên trong phòng:
+```json
+{
+  "type": "TYPING",
+  "chatRoomId": 123,
+  "senderId": 456,
+  "content": "true", // hoặc "false"
+  "timestamp": "2024-01-01T12:00:00"
+}
+```
+
+Client nhận và hiển thị:
+```js
+stompClient.subscribe('/topic/chat/123', function(message) {
+    const data = JSON.parse(message.body);
+    if (data.type === 'TYPING') {
+        if (data.content === 'true') {
+            showTypingIndicator(data.senderId);
+        } else {
+            hideTypingIndicator(data.senderId);
+        }
+    }
 });
 ```
 
