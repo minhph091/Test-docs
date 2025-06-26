@@ -229,4 +229,3 @@ async function checkUserOnlineStatus(userId) {
 
 ---
 
-**Tài liệu này đã được cập nhật với thông tin chính xác từ implementation backend và bao gồm các best practices cho việc xử lý trạng thái online/offline.**
