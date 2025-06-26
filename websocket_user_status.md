@@ -61,7 +61,7 @@ client.activate();
 Kiểm tra trạng thái online ban đầu qua HTTP API:
 
 ```js
-fetch('http://localhost:8080/api/users/123/statuses/online', {
+fetch('http://localhost:8080/users/{userId}/online', {
   headers: { Authorization: `Bearer ${jwtToken}` }
 })
 
