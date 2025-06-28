@@ -37,11 +37,11 @@ import static io.restassured.RestAssured.given;
 
 ## 3. Các thiết lập quan trọng
 
-Để đảm bảo quá trình kiểm thử API hiệu quả, Rest Assured cung cấp các thiết lập cơ bản như baseURI, header chung. Các thiết lập này giúp giảm lặp code, tái sử dụng code tốt hơn. 
+Để đảm bảo quá trình kiểm thử API hiệu quả, Rest Assured cung cấp các thiết lập cơ bản như baseURI, header chung. Các thiết lập này giúp giảm lặp code, tái sử dụng code tốt hơn.
 
 ### 3.1. Thiết lập BaseURI, Port, và BasePath
 
-Cấu hình `baseUri`, `port`, và `basePath` để xác định URL cơ sở cho tất cả các request. 'basePath' là phần cố định ở đầu của đường dẫn (path) trong URL mà mọi request sẽ sử dụng mặc định. 
+Cấu hình `baseUri`, `port`, và `basePath` để xác định URL cơ sở cho tất cả các request. 'basePath' là phần cố định ở đầu của đường dẫn (path) trong URL mà mọi request sẽ sử dụng mặc định.
 
 #### 3.1.1. Thiết lập toàn cục
 
@@ -103,7 +103,7 @@ public void testEndpointFromAnotherService() {
 
 - `baseURI`: Địa chỉ cơ sở của API (ví dụ: `https://api.example.com`).
 - `port`: Cổng của server (mặc định: 80 cho HTTP, 443 cho HTTPS).
-- `basePath`: Đường dẫn chung cho các endpoint (ví dụ: `/v1` hoặc `/api`).
+- `basePath`: Đường dẫn chung cho các endpoint (ví dụ:orbet `/v1` hoặc `/api`).
 - Có thể ghi đè trong từng test case bằng `.baseUri()`, `.port()`, hoặc `.basePath()`.
 
 ### 3.2. Thiết lập Header Chung
@@ -270,7 +270,9 @@ public void testPathParamsWithMap() {
 }
 ```
 
-#### 3.4.4. Lưu ý
+#### 3ерше
+
+System: 3.4.4. Lưu ý
 
 - Path parameters phải khớp với các placeholder trong URL (ví dụ: `{id}`).
 - Sử dụng `pathParams` để quản lý nhiều tham số, đặc biệt trong các endpoint phức tạp.
@@ -709,15 +711,63 @@ given()
 
 ## 10. Xử lý Response
 
-Rest Assured cung cấp nhiều cách để trích xuất và xử lý response từ API. Dưới đây là các kỹ thuật chi tiết để làm việc với response.
+Rest Assured cung cấp nhiều cách để trích xuất và xử lý response từ API. Dưới đây là các phương pháp khác nhau để kiểm tra giá trị body của response, bao gồm các ví dụ minh họa, ưu/nhược điểm của từng phương pháp, và các hàm xử lý phổ biến.
 
-### 10.1. Trích xuất Response
+### 10.1. Kiểm tra trực tiếp trong `.then()`
 
-Lưu response để xử lý sau:
+Phương pháp này sử dụng các matcher của Rest Assured (như `equalTo`, `containsString`) để kiểm tra body response ngay trong chuỗi `.then()`. Đây là cách phổ biến và ngắn gọn nhất.
+
+#### 10.1.1. Ví dụ
 
 ```java
 @Test
-public void testExtractResponse() {
+public void testCheckBodyInThen() {
+    given()
+        .baseUri("https://api.example.com")
+        .when()
+        .get("/users/1")
+        .then()
+        .statusCode(200)
+        .body("name", equalTo("John Doe"))
+        .body("email", equalTo("john@example.com"))
+        .body("address.city", containsString("York"));
+}
+```
+
+#### 10.1.2. Ưu điểm
+
+- **Ngắn gọn**: Kiểm tra trực tiếp trong `.then()` giúp code dễ đọc, phù hợp với các test case đơn giản.
+- **Tích hợp tốt với Given-When-Then**: Tuân thủ mô hình BDD, dễ hiểu cho cả tester và developer.
+- **Hỗ trợ nhiều matcher**: Rest Assured cung cấp các matcher như `equalTo`, `containsString`, `hasItems` để kiểm tra linh hoạt.
+
+#### 10.1.3. Nhược điểm
+
+- **Khó xử lý logic phức tạp**: Nếu cần kiểm tra nhiều điều kiện hoặc xử lý dữ liệu phức tạp, việc nhúng logic vào `.then()` làm code khó bảo trì.
+- **Khó tái sử dụng**: Các kiểm tra trong `.then()` thường không thể tái sử dụng ở các test case khác.
+- **Khó debug**: Nếu kiểm tra thất bại, thông báo lỗi có thể không đủ chi tiết.
+
+#### 10.1.4. Khi nào nên dùng
+
+- Dùng cho các test case đơn giản, chỉ cần kiểm tra một vài trường cụ thể.
+- Phù hợp khi không cần logic xử lý phức tạp hoặc lưu trữ dữ liệu response.
+
+#### 10.1.5. Các hàm xử lý phổ biến
+
+- `equalTo(value)`: Kiểm tra giá trị chính xác.
+- `containsString(substring)`: Kiểm tra chuỗi có chứa một chuỗi con.
+- `hasItems(items)`: Kiểm tra danh sách chứa các phần tử cụ thể.
+- `notNullValue()`: Kiểm tra giá trị không null.
+- `isEmpty()`: Kiểm tra chuỗi hoặc danh sách rỗng.
+
+### 10.2. Sử dụng Assertion với Response trích xuất
+
+Phương pháp này trích xuất `Response` object và sử dụng các assertion của framework kiểm thử (như JUnit/TestNG) để kiểm tra body. Điều này cho phép áp dụng logic xử lý phức tạp hơn.
+
+#### 10.2.1. Ví dụ
+
+```java
+@Test
+public void testCheckBodyWithAssertion() {
     Response response = given()
         .baseUri("https://api.example.com")
         .when()
@@ -726,115 +776,59 @@ public void testExtractResponse() {
         .statusCode(200)
         .extract().response();
 
-    // Trích xuất các giá trị cụ thể
-    String name = response.jsonPath().getString("name");
-    int id = response.jsonPath().getInt("id");
-    assertEquals("John Doe", name);
-    assertEquals(1, id);
+    // Sử dụng JUnit assertions
+    Assertions.assertEquals("John Doe", response.jsonPath().getString("name"));
+    Assertions.assertEquals("john@example.com", response.jsonPath().getString("email"));
+    Assertions.assertTrue(response.jsonPath().getString("address.city").contains("York"));
 }
 ```
 
-### 10.2. Sử dụng JsonPath để xử lý JSON Response
+#### 10.2.2. Ưu điểm
 
-`JsonPath` cho phép truy xuất dữ liệu trong JSON response một cách dễ dàng.
+- **Linh hoạt**: Có thể áp dụng logic kiểm tra phức tạp, như so sánh điều kiện, vòng lặp, hoặc xử lý dữ liệu response.
+- **Dễ debug**: Assertions của JUnit/TestNG thường cung cấp thông báo lỗi chi tiết hơn.
+- **Tích hợp với framework kiểm thử**: Dễ dàng sử dụng với các công cụ như JUnit, TestNG.
 
-#### 10.2.1. Trích xuất giá trị đơn giản
+#### 10.2.3. Nhược điểm
 
-```java
-@Test
-public void testJsonPathSimple() {
-    Response response = given()
-        .baseUri("https://api.example.com")
-        .when()
-        .get("/users/1")
-        .then()
-        .statusCode(200)
-        .extract().response();
+- **Code dài hơn**: Yêu cầu trích xuất `Response` và viết các assertion riêng, làm tăng số dòng code.
+- **Tách biệt với Given-When-Then**: Làm mất đi tính liền mạch của mô hình Given-When-Then.
 
-    // Trích xuất các trường cụ thể
-    String email = response.jsonPath().getString("email");
-    assertEquals("john@example.com", email);
-}
-```
+#### 10.2.4. Khi nào nên dùng
 
-#### 10.2.2. Trích xuất danh sách
+- Dùng khi cần kiểm tra phức tạp, ví dụ: xử lý danh sách, kiểm tra điều kiện logic, hoặc kết hợp nhiều giá trị.
+- Phù hợp khi cần tích hợp với các framework kiểm thử như JUnit hoặc TestNG.
 
-Xử lý response chứa mảng JSON:
+#### 10.2.5. Các hàm xử lý phổ biến
 
-```java
-@Test
-public void testJsonPathList() {
-    Response response = given()
-        .baseUri("https://api.example.com")
-        .when()
-        .get("/users")
-        .then()
-        .statusCode(200)
-        .extract().response();
+- `response.jsonPath().getString(path)`: Trích xuất giá trị chuỗi từ JSON.
+- `response.jsonPath().getInt(path)`: Trích xuất giá trị số nguyên.
+- `response.jsonPath().getList(path)`: Trích xuất danh sách từ JSON.
+- `response.asString()`: Lấy toàn bộ body dưới dạng chuỗi.
+- `response.jsonPath().getMap(path)`: Trích xuất đối tượng JSON dưới dạng Map.
 
-    // Lấy danh sách tên người dùng
-    List<String> names = response.jsonPath().getList("data.name");
-    assertTrue(names.contains("John Doe"));
-}
-```
+### 10.3. Deserialize Response thành Object và Assertion
 
-#### 10.2.3. Truy xuất JSON lồng nhau
+Phương pháp này chuyển đổi response thành đối tượng Java (POJO) và sử dụng assertion để kiểm tra các thuộc tính của đối tượng. Điều này rất hữu ích khi làm việc với dữ liệu có cấu trúc rõ ràng.
 
-Xử lý JSON có cấu trúc phức tạp:
-
-```java
-@Test
-public void testJsonPathNested() {
-    Response response = given()
-        .baseUri("https://api.example.com")
-        .when()
-        .get("/users/1")
-        .then()
-        .statusCode(200)
-        .extract().response();
-
-    // Truy xuất trường trong đối tượng lồng nhau
-    String city = response.jsonPath().getString("address.city");
-    assertEquals("New York", city);
-}
-```
-
-### 10.3. Sử dụng XmlPath để xử lý XML Response
-
-Nếu API trả về XML, sử dụng `xmlPath`:
-
-```java
-@Test
-public void testXmlPath() {
-    Response response = given()
-        .baseUri("https://api.example.com")
-        .when()
-        .get("/users/1/xml")
-        .then()
-        .statusCode(200)
-        .extract().response();
-
-    // Trích xuất giá trị từ XML
-    String name = response.xmlPath().getString("user.name");
-    assertEquals("John Doe", name);
-}
-```
-
-### 10.4. Deserialize Response thành Object
-
-Chuyển đổi response thành đối tượng Java (POJO) để dễ xử lý:
+#### 10.3.1. Ví dụ
 
 ```java
 public class User {
     private int id;
     private String name;
     private String email;
+    private Address address;
 
+    public static class Address {
+        private String city;
+        // Getters và Setters
+    }
     // Getters và Setters
 }
 
 @Test
-public void testDeserializeResponse() {
+public void testDeserializeAndAssert() {
     User user = given()
         .baseUri("https://api.example.com")
         .when()
@@ -843,41 +837,46 @@ public void testDeserializeResponse() {
         .statusCode(200)
         .extract().as(User.class);
 
-    assertEquals("John Doe", user.getName());
-    assertEquals("john@example.com", user.getEmail());
+    // Sử dụng JUnit assertions
+    Assertions.assertEquals("John Doe", user.getName());
+    Assertions.assertEquals("john@example.com", user.getEmail());
+    Assertions.assertTrue(user.getAddress().getCity().contains("York"));
 }
 ```
 
-### 10.5. Xử lý Response phức tạp
+#### 10.3.2. Ưu điểm
 
-#### 10.5.1. Trích xuất một phần Response
+- **Dễ bảo trì**: Sử dụng POJO giúp code dễ đọc và dễ bảo trì, đặc biệt với các response phức tạp.
+- **Kiểu an toàn**: Kiểm tra kiểu dữ liệu ngay từ khi deserialize, giảm nguy cơ lỗi runtime.
+- **Tái sử dụng**: POJO có thể được sử dụng lại ở nhiều test case.
 
-Lấy một phần của response dưới dạng chuỗi hoặc đối tượng:
+#### 10.3.3. Nhược điểm
+
+- **Cần định nghĩa POJO**: Yêu cầu tạo các class Java tương ứng với cấu trúc response, tăng công việc ban đầu.
+- **Phụ thuộc vào cấu trúc response**: Nếu API thay đổi cấu trúc, POJO cần được cập nhật.
+
+#### 10.3.4. Khi nào nên dùng
+
+- Dùng khi response có cấu trúc rõ ràng và cần kiểm tra nhiều trường.
+- Phù hợp khi làm việc với dữ liệu phức tạp và muốn đảm bảo kiểu an toàn.
+
+#### 10.3.5. Các hàm xử lý phổ biến
+
+- `response.as(class)`: Chuyển đổi response thành đối tượng POJO.
+- `response.jsonPath().getObject(path, class)`: Trích xuất một phần JSON thành POJO.
+- `Assertions.assertEquals(expected, actual)`: So sánh giá trị của thuộc tính POJO.
+- `Assertions.assertNotNull(value)`: Kiểm tra giá trị không null.
+- `Assertions.assertTrue(condition)`: Kiểm tra điều kiện logic.
+
+### 10.4. Sử dụng JsonPath với Logic Tùy chỉnh
+
+Phương pháp này sử dụng `JsonPath` để trích xuất dữ liệu và áp dụng logic tùy chỉnh (như vòng lặp, lọc, hoặc xử lý dữ liệu phức tạp) trước khi kiểm tra.
+
+#### 10.4.1. Ví dụ
 
 ```java
 @Test
-public void testExtractPartialResponse() {
-    Response response = given()
-        .baseUri("https://api.example.com")
-        .when()
-        .get("/users/1")
-        .then()
-        .statusCode(200)
-        .extract().response();
-
-    // Trích xuất một phần JSON
-    String addressJson = response.jsonPath().getString("address");
-    assertTrue(addressJson.contains("New York"));
-}
-```
-
-#### 10.5.2. Kiểm tra Response lớn
-
-Khi response là một mảng lớn, sử dụng `find` hoặc `findAll` trong JsonPath:
-
-```java
-@Test
-public void testLargeResponse() {
+public void testJsonPathWithCustomLogic() {
     Response response = given()
         .baseUri("https://api.example.com")
         .when()
@@ -893,11 +892,82 @@ public void testLargeResponse() {
         .filter(u -> u.get("email").equals("john@example.com"))
         .findFirst()
         .orElse(null);
-    assertNotNull(user);
+
+    Assertions.assertNotNull(user, "User with email john@example.com should exist");
+    Assertions.assertEquals("John Doe", user.get("name"));
 }
 ```
 
-### 10.6. Xử lý Response Header
+#### 10.4.2. Ưu điểm
+
+- **Linh hoạt cao**: Cho phép xử lý dữ liệu phức tạp, như lọc, tìm kiếm, hoặc tính toán trên response.
+- **Tích hợp với assertion**: Có thể kết hợp với JUnit/TestNG để kiểm tra kết quả.
+- **Hữu ích cho danh sách lớn**: Phù hợp khi làm việc với mảng JSON lớn hoặc cần tìm kiếm dữ liệu cụ thể.
+
+#### 10.4.3. Nhược điểm
+
+- **Code phức tạp hơn**: Yêu cầu viết thêm logic xử lý, làm tăng độ phức tạp của code.
+- **Hiệu suất**: Xử lý danh sách lớn hoặc logic phức tạp có thể ảnh hưởng đến hiệu suất test.
+
+#### 10.4.4. Khi nào nên dùng
+
+- Dùng khi response là danh sách lớn hoặc cần xử lý logic phức tạp, như tìm kiếm, lọc, hoặc tính toán dữ liệu.
+
+#### 10.4.5. Các hàm xử lý phổ biến
+
+- `response.jsonPath().getList(path)`: Trích xuất danh sách từ JSON.
+- `response.jsonPath().getMap(path)`: Trích xuất đối tượng JSON dưới dạng Map.
+- `Stream.filter(predicate)`: Lọc danh sách theo điều kiện.
+- `Stream.findFirst()`: Lấy phần tử đầu tiên khớp điều kiện.
+- `Assertions.assertNotNull(value)`: Kiểm tra giá trị không null.
+
+### 10.5. Sử dụng JsonPath để kiểm tra danh sách
+
+Phương pháp này sử dụng `JsonPath` để trích xuất và kiểm tra danh sách trong response.
+
+#### 10.5.1. Ví dụ
+
+```java
+@Test
+public void testJsonPathList() {
+    Response response = given()
+        .baseUri("https://api.example.com")
+        .when()
+        .get("/users")
+        .then()
+        .statusCode(200)
+        .extract().response();
+
+    // Lấy danh sách tên người dùng
+    List<String> names = response.jsonPath().getList("data.name");
+    Assertions.assertTrue(names.contains("John Doe"), "List should contain John Doe");
+    Assertions.assertEquals(3, names.size(), "List should have 3 users");
+}
+```
+
+#### 10.5.2. Ưu điểm
+
+- **Đơn giản với danh sách**: Dễ dàng trích xuất và kiểm tra các mảng JSON.
+- **Tích hợp với assertion**: Có thể sử dụng assertion để kiểm tra kích thước, nội dung, hoặc các điều kiện khác.
+
+#### 10.5.3. Nhược điểm
+
+- **Giới hạn với logic phức tạp**: Nếu cần xử lý phức tạp hơn (như lọc theo nhiều điều kiện), cần kết hợp với logic tùy chỉnh.
+- **Phụ thuộc JsonPath**: Chỉ hoạt động tốt với JSON, không phù hợp cho XML hoặc các định dạng khác.
+
+#### 10.5.4. Khi nào nên dùng
+
+- Dùng khi response trả về danh sách và cần kiểm tra các thuộc tính cụ thể của danh sách.
+
+#### 10.5.5. Các hàm xử lý phổ biến
+
+- `response.jsonPath().getList(path)`: Trích xuất danh sách từ JSON.
+- `Assertions.assertTrue(condition)`: Kiểm tra điều kiện logic.
+- `Assertions.assertEquals(expected, actual)`: So sánh kích thước hoặc giá trị danh sách.
+- `names.contains(value)`: Kiểm tra danh sách chứa giá trị cụ thể.
+- `names.size()`: Lấy kích thước danh sách.
+
+### 10.6. Kiểm tra Response Header
 
 Trích xuất và kiểm tra header:
 
@@ -913,11 +983,18 @@ public void testResponseHeader() {
         .extract().response();
 
     String contentType = response.getHeader("Content-Type");
-    assertEquals("application/json; charset=utf-8", contentType);
+    Assertions.assertEquals("application/json; charset=utf-8", contentType);
 }
 ```
 
-### 10.7. Xử lý Response Time
+#### 10.6.1. Các hàm xử lý phổ biến
+
+- `response.getHeader(name)`: Trích xuất giá trị của header cụ thể.
+- `response.getHeaders()`: Lấy toàn bộ danh sách header.
+- `Assertions.assertEquals(expected, actual)`: So sánh giá trị header.
+- `Assertions.assertNotNull(header)`: Kiểm tra header tồn tại.
+
+### 10.7. Kiểm tra Response Time
 
 Kiểm tra thời gian phản hồi của API:
 
@@ -933,9 +1010,15 @@ public void testResponseTime() {
         .extract().response();
 
     long responseTime = response.getTimeIn(TimeUnit.MILLISECONDS);
-    assertTrue(responseTime < 1000, "Response time should be less than 1 second");
+    Assertions.assertTrue(responseTime < 1000, "Response time should be less than 1 second");
 }
 ```
+
+#### 10.7.1. Các hàm xử lý phổ biến
+
+- `response.getTimeIn(TimeUnit)`: Lấy thời gian phản hồi theo đơn vị thời gian.
+- `Assertions.assertTrue(condition)`: Kiểm tra điều kiện thời gian.
+- `Assertions.assertTrue(responseTime < maxTime)`: Kiểm tra thời gian nhỏ hơn giá trị tối đa.
 
 ### 10.8. Lưu Response vào File
 
@@ -956,10 +1039,16 @@ public void testSaveResponseToFile() {
     try {
         Files.writeString(Paths.get("response.json"), response.asString());
     } catch (IOException e) {
-        fail("Failed to save response to file: " + e.getMessage());
+        Assertions.fail("Failed to save response to file: " + e.getMessage());
     }
 }
 ```
+
+#### 10.8.1. Các hàm xử lý phổ biến
+
+- `response.asString()`: Lấy nội dung response dưới dạng chuỗi.
+- `Files.writeString(path, string)`: Ghi chuỗi vào file.
+- `Assertions.fail(message)`: Báo lỗi nếu lưu file thất bại.
 
 ### 10.9. Lưu ý khi xử lý Response
 
@@ -984,4 +1073,245 @@ given()
     .log().all() // Log response
     .statusCode(200);
 ```
+## 12. Cách đặt tên test case cho API test
+
+Việc đặt tên test case một cách rõ ràng và nhất quán là rất quan trọng để đảm bảo tính dễ đọc, dễ bảo trì và dễ hiểu cho các thành viên trong nhóm. Một tên test case tốt nên phản ánh mục đích của bài kiểm thử, hành vi được kiểm tra, và kết quả mong đợi. 
+
+### 12.1. Quy ước đặt tên test case
+
+Một tên test case tốt thường tuân theo các nguyên tắc sau:
+
+- **Rõ ràng và mô tả**: Tên test case nên mô tả chính xác hành vi hoặc chức năng được kiểm tra.
+- **Ngắn gọn nhưng đủ thông tin**: Tránh tên quá dài, nhưng vẫn cung cấp đủ ngữ cảnh.
+- **Tuân theo mẫu nhất quán**: Sử dụng một mẫu đặt tên thống nhất trong toàn bộ dự án để dễ tìm kiếm và quản lý.
+- **Tránh thông tin dư thừa**: Không lặp lại thông tin đã được biểu thị trong tên class hoặc package.
+
+### 12.2. Các mẫu đặt tên phổ biến
+
+Dưới đây là một số mẫu đặt tên phổ biến, ưu tiên mô tả kết quả theo ngữ cảnh thay vì chỉ dựa vào mã trạng thái HTTP.
+
+#### 12.2.1. Mẫu `test[Chức năng][Tình huống][Kết quả ngữ cảnh]`
+
+Mẫu này tập trung vào chức năng, tình huống cụ thể và kết quả mong đợi được diễn đạt bằng ngôn ngữ tự nhiên.
+
+- **Cú pháp**: `test[Chức năng][Tình huống][Kết quả ngữ cảnh]`
+- **Ví dụ**:
+  ```java
+  @Test
+  public void testGetUserByIdValidSucceedsWithUserData() {
+      given()
+          .baseUri("https://api.example.com")
+          .pathParam("id", 1)
+          .when()
+          .get("/users/{id}")
+          .then()
+          .statusCode(200)
+          .body("id", equalTo(1));
+  }
+
+  @Test
+  public void testCreateUserWithValidDataSucceedsWithCreation() {
+      String requestBody = "{\"name\": \"Jane Doe\", \"email\": \"jane@example.com\"}";
+      given()
+          .baseUri("https://api.example.com")
+          .contentType(ContentType.JSON)
+          .body(requestBody)
+          .when()
+          .post("/users")
+          .then()
+          .statusCode(201)
+          .body("email", equalTo("jane@example.com"));
+  }
+  ```
+
+- **Ưu điểm**:
+  - Rất rõ ràng, dễ hiểu mục đích của test case.
+  - Phản ánh cả input (tình huống) và output (kết quả) một cách tự nhiên.
+  - Tập trung vào "cái gì" được trả về, không chỉ là "mã trạng thái".
+- **Nhược điểm**:
+  - Tên có thể dài nếu tình huống hoặc kết quả phức tạp.
+- **Khi nào nên dùng**: Khi muốn nhấn mạnh hành vi cụ thể và kết quả mong đợi một cách tự nhiên, dễ hiểu. Đây là mẫu được khuyến khích sử dụng.
+
+#### 12.2.2. Mẫu `test[HTTP Method][Resource][Tình huống]`
+
+Mẫu này tập trung vào phương thức HTTP và tài nguyên, với kết quả được ngụ ý qua ngữ cảnh của tình huống (thường là trường hợp lỗi).
+
+- **Cú pháp**: `test[HTTP Method][Resource][Tình huống]`
+- **Ví dụ**:
+  ```java
+  @Test
+  public void testGetUserWithInvalidIdFailsWithNotFound() {
+      given()
+          .baseUri("https://api.example.com")
+          .pathParam("id", 999)
+          .when()
+          .get("/users/{id}")
+          .then()
+          .statusCode(404);
+  }
+
+  @Test
+  public void testPostUserWithMissingEmailFailsWithBadRequest() {
+      String requestBody = "{\"name\": \"Jane Doe\"}";
+      given()
+          .baseUri("https://api.example.com")
+          .contentType(ContentType.JSON)
+          .body(requestBody)
+          .when()
+          .post("/users")
+          .then()
+          .statusCode(400);
+  }
+  ```
+
+- **Ưu điểm**:
+  - Nhấn mạnh phương thức HTTP và tài nguyên, giúp dễ phân loại test case theo endpoint.
+  - Kết quả được ngụ ý qua ngữ cảnh (FailsWithNotFound), tránh việc chỉ dựa vào mã trạng thái.
+- **Nhược điểm**:
+  - Có thể thiếu thông tin chi tiết về kết quả nếu ngữ cảnh không đủ rõ ràng.
+- **Khi nào nên dùng**: Khi cần tổ chức test case theo phương thức HTTP hoặc tài nguyên, đặc biệt cho các trường hợp lỗi.
+
+#### 12.2.3. Mẫu `should[Action][Result]` (Phong cách BDD)
+
+Mẫu này sử dụng phong cách BDD (Behavior-Driven Development), tập trung vào hành động và kết quả mong đợi bằng ngôn ngữ tự nhiên.
+
+- **Cú pháp**: `should[Action][Result]`
+- **Ví dụ**:
+  ```java
+  @Test
+  public void shouldRetrieveUserWhenIdIsValid() {
+      given()
+          .baseUri("https://api.example.com")
+          .pathParam("id", 1)
+          .when()
+          .get("/users/{id}")
+          .then()
+          .statusCode(200)
+          .body("name", equalTo("John Doe"));
+  }
+
+  @Test
+  public void shouldFailWhenCreatingUserWithInvalidData() {
+      String requestBody = "{\"name\": \"\", \"email\": \"invalid-email\"}";
+      given()
+          .baseUri("https://api.example.com")
+          .contentType(ContentType.JSON)
+          .body(requestBody)
+          .when()
+          .post("/users")
+          .then()
+          .statusCode(400);
+  }
+  ```
+
+- **Ưu điểm**:
+  - Tuân thủ phong cách BDD, dễ đọc và thân thiện với cả các bên liên quan không rành kỹ thuật.
+  - Tập trung vào hành vi (behavior) của API.
+- **Nhược điểm**:
+  - Có thể không rõ ràng về tài nguyên hoặc phương thức HTTP nếu không có ngữ cảnh từ tên class.
+- **Khi nào nên dùng**: Khi dự án áp dụng BDD hoặc cần tên test case dễ hiểu cho cả đội phát triển và đội nghiệp vụ.
+
+### 12.3. Lưu ý khi đặt tên test case
+
+- **Sử dụng CamelCase**: Tuân thủ quy ước Java, ví dụ: `testGetUserByIdValidSucceeds`.
+- **Tránh sử dụng số thứ tự**: Không đặt tên như `test1`, `test2` vì không cung cấp thông tin.
+- **Bao gồm ngữ cảnh cụ thể**: Nếu test liên quan đến điều kiện đặc biệt (ví dụ: `InvalidId`, `MissingEmail`), hãy đưa vào tên để rõ ràng.
+- **Nhất quán trong dự án**: Chọn một mẫu và đảm bảo toàn đội sử dụng cùng mẫu đó để dễ quản lý.
+- **Mô tả kết quả mong đợi**: Thay vì chỉ ghi mã trạng thái, hãy dùng các từ mô tả hành vi như `Succeeds`, `FailsWithNotFound`, `IsCreated` để làm rõ kết quả.
+
+### 12.4. Ví dụ tổ chức test case
+
+Dưới đây là ví dụ về cách tổ chức và đặt tên test case trong một class kiểm thử, áp dụng quy ước hướng hành vi.
+
+```java
+// File: UserApiTests.java
+public class UserApiTests {
+
+    @BeforeAll
+    public static void setup() {
+        RestAssured.baseURI = "https://api.example.com";
+        RestAssured.basePath = "/v1";
+    }
+
+    @Test
+    public void testGetUserByIdValidSucceeds() {
+        given()
+            .pathParam("id", 1)
+            .when()
+            .get("/users/{id}")
+            .then()
+            .statusCode(200)
+            .body("name", equalTo("John Doe"));
+    }
+
+    @Test
+    public void testGetUserByIdInvalidFailsWithNotFound() {
+        given()
+            .pathParam("id", 999)
+            .when()
+            .get("/users/{id}")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
+    public void testPostUserWithValidDataSucceedsWithCreation() {
+        String requestBody = "{\"name\": \"Jane Doe\", \"email\": \"jane@example.com\"}";
+        given()
+            .contentType(ContentType.JSON)
+            .body(requestBody)
+            .when()
+            .post("/users")
+            .then()
+            .statusCode(201)
+            .body("email", equalTo("jane@example.com"));
+    }
+
+    @Test
+    public void testPostUserWithMissingEmailFailsWithBadRequest() {
+        String requestBody = "{\"name\": \"Jane Doe\"}";
+        given()
+            .contentType(ContentType.JSON)
+            .body(requestBody)
+            .when()
+            .post("/users")
+            .then()
+            .statusCode(400);
+    }
+}
+```
+
+### 12.5. Best Practices
+
+- **Tổ chức theo tài nguyên**: Nhóm các test case theo endpoint hoặc tài nguyên trong các class riêng biệt (ví dụ: `UserApiTests`, `OrderApiTests`).
+- **Kiểm tra cả trường hợp tích cực và tiêu cực**: Đảm bảo bao gồm các test case cho cả dữ liệu hợp lệ và không hợp lệ.
+- **Kết hợp Tên phương thức và @DisplayName để có hiệu quả tối ưu**: Đây là phương pháp được khuyến khích mạnh mẽ để đạt được sự cân bằng giữa code dễ đọc và báo cáo chi tiết.
+  - **Tên phương thức (Method Name)**: Sử dụng quy ước hướng hành vi, tập trung vào ngữ cảnh (ví dụ: `...FailsWithNotFound`). Tên này phục vụ cho những người trực tiếp đọc code (dev, QA).
+  - **Chú thích @DisplayName (JUnit 5)**: Cung cấp một câu mô tả đầy đủ, tự nhiên, bao gồm cả các chi tiết kỹ thuật nếu cần (phương thức HTTP, endpoint, mã trạng thái)..
+
+- **Ví dụ thực tế**:
+  ```java
+  @Test
+  @DisplayName("GET /users/{id}: Should return user data and status 200 when ID is valid")
+  public void testGetUserByIdValidSucceeds() {
+      given()
+          .pathParam("id", 1)
+          .when()
+          .get("/users/{id}")
+          .then()
+          .statusCode(200)
+          .body("name", equalTo("John Doe"));
+  }
+
+  @Test
+  @DisplayName("GET /users/{id}: Should return an error and status 404 when ID does not exist")
+  public void testGetUserByIdInvalidFailsWithNotFound() {
+      given()
+          .pathParam("id", 999)
+          .when()
+          .get("/users/{id}")
+          .then()
+          .statusCode(404);
+  }
+  ```
 
